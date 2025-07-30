@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loan Calculator - Dracula Theme</title>
+
+  <!-- Icons + Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="theme-color" content="#bd93f9" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="LoanCalc" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #282a36;
+      --text: #f8f8f2;
+      --primary: #bd93f9;
+      --success: #50fa7b;
+      --info: #8be9fd;
+      --alert: #ff79c6;
+      --card: #44475a;
+      --border: #6272a4;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Fira Code', monospace;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 2rem 1rem;
+    }
+
+    main.container {
+      max-width: 500px;
+      margin: auto;
+      background-color: var(--card);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+      color: var(--info);
+    }
+
+    input {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.4rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    button {
+      margin-top: 1.5rem;
+      width: 100%;
+      padding: 0.75rem;
+      background-color: var(--primary);
+      color: var(--bg);
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #caa9fa;
+    }
+
+    .result {
+      margin-top: 2rem;
+      background: #343746;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .result h3 {
+      margin-top: 0;
+      color: var(--alert);
+      text-align: center;
+    }
+
+    .result p {
+      text-align: center;
+      font-size: 1rem;
+      margin: 1.2rem 0;
+    }
+
+    .result-label {
+      display: block;
+      color: var(--info);
+    }
+
+    .result-value {
+      display: block;
+      margin-top: 0.4rem;
+      color: var(--success);
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    .error {
+      color: #ff5555;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 400px) {
+      h1 {
+        font-size: 1.4rem;
+      }
+
+      input, button {
+        font-size: 0.9rem;
+      }
+
+      .result-label, .result-value {
+        font-size: 0.95rem;
+      }
+
+      .result-value {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="container">
+    <h1>Loan Calculator 🧛</h1>
+
+    <label for="loan">Loan Amount (RM)</label>
+    <input type="number" id="loan" placeholder="Min 1,000 - Max 500,000" />
+
+    <label for="tenure">Tenure (Years)</label>
+    <input type="number" id="tenure" placeholder="Min 1 - Max 35" />
+
+    <label for="rate">Flat Rate (% p.a.)</label>
+    <input type="number" id="rate" step="0.01" placeholder="Min 0.1% - Max 20%" />
+
+    <button onclick="calculateLoan()">Calculate</button>
+
+    <div class="error" id="errorMsg" style="display: none;"></div>
+
+    <div class="result" id="result" style="display: none;">
+      <h3>Result</h3>
+      <div id="monthly"></div>
+      <div id="totalProfit"></div>
+      <div id="totalRepayment"></div>
+    </div>
+  </main>
+
+  <footer>
+    © 2025 Loan Calculator | Dracula Theme
+  </footer>
+
+  <script>
+    const loanInput = document.getElementById('loan');
+    const tenureInput = document.getElementById('tenure');
+    const rateInput = document.getElementById('rate');
+    const errorMsg = document.getElementById('errorMsg');
+
+    loanInput.addEventListener('input', autoCalculate);
+    tenureInput.addEventListener('input', autoCalculate);
+    rateInput.addEventListener('input', autoCalculate);
+
+    function autoCalculate() {
+      const loan = parseFloat(loanInput.value);
+      const tenure = parseFloat(tenureInput.value);
+      const rate = parseFloat(rateInput.value);
+      if (!isNaN(loan) && !isNaN(tenure) && !isNaN(rate)) {
+        calculateLoan();
+      }
+    }
+
+    function formatRM(value) {
+      return 'RM ' + value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    function calculateLoan() {
+      const loan = parseFloat(loanInput.value);
+      const tenure = parseFloat(tenureInput.value);
+      const rate = parseFloat(rateInput.value);
+
+      if (loan < 1000 || loan > 500000) {
+        showError("Loan amount must be between RM 1,000 and RM 500,000.");
+        return;
+      }
+      if (tenure < 1 || tenure > 35) {
+        showError("Tenure must be between 1 and 35 years.");
+        return;
+      }
+      if (rate < 0.1 || rate > 20) {
+        showError("Rate must be between 0.1% and 20%.");
+        return;
+      }
+
+      hideError();
+
+      const months = tenure * 12;
+      const rateDecimal = rate / 100;
+      const totalProfit = loan * rateDecimal * tenure;
+      const totalRepayment = loan + totalProfit;
+      const monthlyRepayment = totalRepayment / months;
+
+      document.getElementById('monthly').innerHTML = `
+        <p>
+          <span class="result-label">📅 Monthly Repayment:</span>
+          <span class="result-value">${formatRM(monthlyRepayment)}</span>
+        </p>`;
+      document.getElementById('totalProfit').innerHTML = `
+        <p>
+          <span class="result-label">💰 Total Profit:</span>
+          <span class="result-value">${formatRM(totalProfit)}</span>
+        </p>`;
+      document.getElementById('totalRepayment').innerHTML = `
+        <p>
+          <span class="result-label">📦 Total Repayment:</span>
+          <span class="result-value">${formatRM(totalRepayment)}</span>
+        </p>`;
+
+      document.getElementById('result').style.display = 'block';
+    }
+
+    function showError(message) {
+      errorMsg.textContent = message;
+      errorMsg.style.display = 'block';
+      document.getElementById('result').style.display = 'none';
+    }
+
+    function hideError() {
+      errorMsg.textContent = "";
+      errorMsg.style.display = 'none';
+    }
+  </script>
+
+</body>
+</html>
